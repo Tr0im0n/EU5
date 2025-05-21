@@ -17,14 +17,13 @@ pygame.display.set_caption("Pygame Boilerplate")
 
 hex_grid = get_hex_grid_center_cords(16, 9)
 
-
 while running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
 
     fps = str(int(clock.get_fps()))
-    fps_text = font.render(f"fps: {fps}", True, (255, 255, 255))
+    fps_text = font.render(f"fps: {fps}", True, WHITE)
 
     screen.fill(BLACK)
     draw_hex_grid(screen, WHITE, hex_grid, 40, 30)
