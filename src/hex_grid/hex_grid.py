@@ -59,19 +59,11 @@ def draw_hex_grid(surface, color, hex_grid, x_interval_length=10, y_interval_len
 
 
 if __name__ == "__main__":
-    # grid = get_hex_grid_center_cords(6, 6)
-    # print(grid)
-    # first_hex_lines = get_hex_line_cords(1, 2)
-    # print(first_hex_lines)
+    grid = get_hex_grid_center_cords(6, 6)
+    print(grid)
+    first_hex_lines = get_hex_line_cords(1, 2)
+    print(first_hex_lines)
 
-    width, height = 100, 100  # Example arguments
-    compare_function_speed(
-        get_hex_grid_center_cords_old,
-        get_hex_grid_center_cords,
-        args=(width, height),
-        func1_name="Loop-based",
-        func2_name="Vectorized"
-    )
 
 
 
