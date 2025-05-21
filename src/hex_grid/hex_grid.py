@@ -1,5 +1,6 @@
 
 import numpy as np
+import pygame
 
 
 def get_hex_grid_center_cords(width, height):
@@ -16,7 +17,14 @@ def get_hex_grid_center_cords(width, height):
 
 
 def get_hex_line_cords(x, y):
-    return [(x-1, y+1), (x-1, y-1), (x, y-2), (x+1, y-1)]
+    return np.array([(x-1, y+1), (x-1, y-1), (x, y-2), (x+1, y-1)])
+
+
+def draw_hex_grid(surface, color, hex_grid, x_interval_length=10, y_interval_length=10):
+    transform_matrix = np.array( (x_interval_length, y_interval_length) )
+    for hex_center_cord in hex_grid:
+        points = get_hex_line_cords(*hex_center_cord) * transform_matrix
+        pygame.draw.lines(surface, color, False, points)
 
 
 if __name__ == "__main__":
