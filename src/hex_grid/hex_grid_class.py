@@ -12,7 +12,7 @@ class HexGrid:
 
         self.get_center_cords()
         self.get_lines_cords()
-        self.add_perspective_vectorized()
+        # self.add_perspective_vectorized()
 
     def get_center_cords(self):    # made by GROK
         height, width = self.height, self.width
@@ -34,18 +34,27 @@ class HexGrid:
             np.column_stack((x+1, y-1))
         ], axis=1)
 
-    def add_perspective_vectorized(self, x_scale=10, y_scale=10, x_center=800,
-                                   h=0.05, y_shift=0, e=1, surface_height=900):
-        points = self.lines_cords
-        scaling_factor = 1 + h - h*2*y_scale*points[..., 1]/surface_height
-
-        new_x = x_center + (x_scale * points[..., 0] - x_center) / scaling_factor
-        new_y = (y_shift + e * y_scale * points[..., 1]) / scaling_factor
+    def scale_and_scroll(self, scroll, x_scale=40, y_scale=30):
+        new_x = self.lines_cords[..., 0] * x_scale - scroll.x
+        new_y = self.lines_cords[..., 1] * y_scale - scroll.y
         return np.stack((new_x, new_y), axis=-1)
 
-    def draw(self, surface, x_scale=10, y_scale=10):
+    def add_perspective_vectorized(self, scroll, x_scale=10, y_scale=10,
+                                   x_center=800, h=0.05, y_shift=0, e=1.2, surface_height=900):
+        points = self.scale_and_scroll(scroll, x_scale, y_scale)
+        # h = np.power(0.5, scroll.z)
+        h = scroll.z/10
+        scaling_factor = 1 + h - h * 2 * points[..., 1] / surface_height
+        # scaling_factor = 1 - h + h * 2 * points[..., 1] / surface_height
+
+        new_x = x_center + (points[..., 0] - x_center) / scaling_factor
+        # new_y = (y_shift + e * points[..., 1]) / scaling_factor
+        new_y = 900 - (900 - points[..., 1]) / scaling_factor
+        return np.stack((new_x, new_y), axis=-1)
+
+    def draw(self, surface, scroll, x_scale=10, y_scale=10):
         surface_height = surface.get_size()[1]
-        final_line_cords = self.add_perspective_vectorized(x_scale, y_scale, surface_height=surface_height)
+        final_line_cords = self.add_perspective_vectorized(scroll, x_scale, y_scale, surface_height=surface_height)
         for line_cords in final_line_cords:
             pygame.draw.aalines(surface, self.color, False, line_cords)
 
