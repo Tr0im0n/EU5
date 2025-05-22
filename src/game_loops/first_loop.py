@@ -2,6 +2,7 @@
 
 import pygame
 
+from src.game_loops.scroll import Scroll
 from src.hex_grid.hex_grid import get_hex_grid_center_cords, draw_hex_grid
 from src.hex_grid.hex_grid_class import HexGrid
 
@@ -16,6 +17,7 @@ running = True
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("Pygame Boilerplate")
 
+scroll = Scroll()
 hex_grid2 = HexGrid(16, 9, WHITE)
 
 while running:
