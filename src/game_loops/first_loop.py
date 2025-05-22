@@ -16,7 +16,7 @@ font = pygame.font.SysFont("arial", 20)
 running = True
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("Pygame Boilerplate")
-dragging, last_pos = 0, 0
+last_pos_for_scroll = None
 
 scroll = Scroll(x_ub=800, y_ub=450)
 hex_grid2 = HexGrid(16, 9, WHITE)
@@ -27,20 +27,19 @@ while running:
             running = False
         elif event.type == pygame.MOUSEBUTTONDOWN:
             if event.button == 3:  # Right mouse button
-                dragging = True
-                last_pos = event.pos
+                last_pos_for_scroll = event.pos
         elif event.type == pygame.MOUSEBUTTONUP:
             if event.button == 3:  # Right mouse button
-                dragging = False
-                last_pos = None
+                last_pos_for_scroll = None
         elif event.type == pygame.MOUSEMOTION:
-            if dragging and last_pos:
-                current_pos = event.pos
-                dx = current_pos[0] - last_pos[0]
-                dy = current_pos[1] - last_pos[1]
-                scroll.x -= dx  # Move x opposite to mouse movement
-                scroll.y -= dy  # Move y opposite to mouse movement
-                last_pos = current_pos
+            if last_pos_for_scroll is not None:
+
+                # Handle scrolling
+                current_pos_snapshot = event.pos
+                scroll.x -= current_pos_snapshot[0] - last_pos_for_scroll[0]
+                scroll.y -= current_pos_snapshot[1] - last_pos_for_scroll[1]
+                last_pos_for_scroll = current_pos_snapshot
+
         elif event.type == pygame.MOUSEWHEEL:
             scroll.z += event.y * 0.5  # Scroll up (1) or down (-1), scaled by 0.5
 
