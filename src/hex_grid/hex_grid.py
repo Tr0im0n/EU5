@@ -2,8 +2,6 @@
 import numpy as np
 import pygame
 
-from test.timing import compare_function_speed
-
 
 def get_hex_grid_center_cords_old(width, height):
     ans = np.zeros((height, width, 2), dtype=np.int_)
@@ -19,6 +17,7 @@ def get_hex_grid_center_cords(width, height):                   # made by GROK
     cols = np.arange(width, dtype=np.int_)                      # Shape (width,)
     x = 1 + rows % 2 + cols * 2                                 # Shape (height, width)
     y = 2 + 3 * rows                                            # Shape (height, width)
+    y = np.broadcast_to(y, shape=(height, width))               # Broadcast to (height, width)
     ans = np.stack(arrays=(x, y), axis=2)                       # Shape (height, width, 2)
     ans.shape = (height * width, 2)                             # Reshape to (height*width, 2)
     return ans
@@ -33,6 +32,17 @@ def get_all_hex_line_cords(hex_grid):
     return np.apply_along_axis(get_hex_line_cords, 1, hex_grid)
 
 
+def get_all_hex_line_cords_stack(hex_grid):
+    x = hex_grid[:, 0]
+    y = hex_grid[:, 1]
+    return np.stack([
+        np.column_stack((x-1, y+1)),
+        np.column_stack((x-1, y-1)),
+        np.column_stack((x, y-2)),
+        np.column_stack((x+1, y-1))
+    ], axis=1)
+
+
 def add_perspective(cord, x_center=800, h=0.0005, y_shift=0, e=1):
     x, y = cord
     # x_perspective = x_center + (x - x_center) / (h * y + 1)
@@ -42,10 +52,14 @@ def add_perspective(cord, x_center=800, h=0.0005, y_shift=0, e=1):
     return np.array([x_perspective, y_perspective])
 
 
+def add_perspective_along_axis(points):
+    return np.apply_along_axis(add_perspective, 2, points)
+
+
 def add_perspective_vectorized(points, x_center=800, h=0.0005, y_shift=0, e=1):
-    # return np.stack((points[..., 0] * 2, points[..., 1] + 1), axis=-1)
     return np.stack((x_center + (points[..., 0] - x_center) / (h * points[..., 1] + 1),
-                     points[..., 1] + 1), axis=-1)
+                     (y_shift + e * points[..., 1]) / (h * points[..., 1] + 1)),
+                    axis=-1)
 
 
 def draw_hex_grid(surface, color, hex_grid, x_interval_length=10, y_interval_length=10):

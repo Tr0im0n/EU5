@@ -3,6 +3,7 @@
 import pygame
 
 from src.hex_grid.hex_grid import get_hex_grid_center_cords, draw_hex_grid
+from src.hex_grid.hex_grid_class import HexGrid
 
 pygame.init()
 WIDTH, HEIGHT = 1600, 900
@@ -15,7 +16,7 @@ running = True
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("Pygame Boilerplate")
 
-hex_grid = get_hex_grid_center_cords(16, 9)
+hex_grid2 = HexGrid(16, 9, WHITE)
 
 while running:
     for event in pygame.event.get():
@@ -26,7 +27,7 @@ while running:
     fps_text = font.render(f"fps: {fps}", True, WHITE)
 
     screen.fill(BLACK)
-    draw_hex_grid(screen, WHITE, hex_grid, 40, 30)
+    hex_grid2.draw(screen, 40, 30)
 
     screen.blit(fps_text, (10, 10))
 
