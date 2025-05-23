@@ -24,7 +24,7 @@ class HexGrid:
         self.center_cords = np.stack(arrays=(x, y), axis=2)
         self.center_cords.shape = (height * width, 2)
 
-    def get_lines_cords(self):
+    def get_lines_cords(self):  # shape = (height*width, 4, 2)
         x = self.center_cords[:, 0]
         y = self.center_cords[:, 1]
         self.lines_cords = np.stack([
@@ -42,7 +42,6 @@ class HexGrid:
     def add_perspective_vectorized(self, scroll, x_scale=10, y_scale=10,
                                    x_center=800, h=0.05, y_shift=0, e=1.2, surface_height=900):
         points = self.scale_and_scroll(scroll, x_scale, y_scale)
-        # h = np.power(0.5, scroll.z)
         h = scroll.z/10
         scaling_factor = 1 + h - h * 2 * points[..., 1] / surface_height
         # scaling_factor = 1 - h + h * 2 * points[..., 1] / surface_height

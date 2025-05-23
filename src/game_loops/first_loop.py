@@ -3,7 +3,6 @@
 import pygame
 
 from src.game_loops.scroll import Scroll
-from src.hex_grid.hex_grid import get_hex_grid_center_cords, draw_hex_grid
 from src.hex_grid.hex_grid_class import HexGrid
 
 pygame.init()
@@ -32,14 +31,12 @@ while running:
             if event.button == 3:  # Right mouse button
                 last_pos_for_scroll = None
         elif event.type == pygame.MOUSEMOTION:
+            # Handle scrolling
             if last_pos_for_scroll is not None:
-
-                # Handle scrolling
                 current_pos_snapshot = event.pos
                 scroll.x -= current_pos_snapshot[0] - last_pos_for_scroll[0]
                 scroll.y -= current_pos_snapshot[1] - last_pos_for_scroll[1]
                 last_pos_for_scroll = current_pos_snapshot
-
         elif event.type == pygame.MOUSEWHEEL:
             scroll.z += event.y * 0.5  # Scroll up (1) or down (-1), scaled by 0.5
 
@@ -53,8 +50,6 @@ while running:
 
     pygame.display.flip()
     clock.tick(FPS)
-
-
 
 
 pygame.quit()
