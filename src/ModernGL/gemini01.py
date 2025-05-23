@@ -6,7 +6,7 @@ from src.hex_grid.hex_grid_class import HexGrid
 
 # Initialize Pygame
 pygame.init()
-screen_width, screen_height = 800, 600
+screen_width, screen_height = 1600, 900
 pygame.display.set_mode((screen_width, screen_height), pygame.OPENGL | pygame.DOUBLEBUF)
 ctx = moderngl.create_context()
 
@@ -58,7 +58,7 @@ fragment_shader = '''
 #version 330 core
 out vec4 FragColor;
 void main() {
-    FragColor = vec4(0.0, 0.0, 1.0, 1.0); // Blue color
+    FragColor = vec4(1.0, 1.0, 1.0, 1.0); // Blue color
 }
 '''
 
@@ -77,7 +77,7 @@ u_view_loc = prog['u_view']
 u_projection_loc = prog['u_projection']
 
 # --- Set up Camera (View Matrix) ---
-camera_pos = glm.vec3(0.0, -1.0, 5.0)   # Camera at (0,0,15)
+camera_pos = glm.vec3(0.0, -3.0, 5.0)   # Camera at (0,0,15)
 look_at = glm.vec3(0.0, 0.0, 0.0)    # Looking at the origin
 up_vector = glm.vec3(0.0, 1.0, 0.0)  # Y-axis is up
 view_matrix = glm.lookAt(camera_pos, look_at, up_vector)
