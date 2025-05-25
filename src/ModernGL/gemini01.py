@@ -1,8 +1,11 @@
+import os
+
 import pygame
 import moderngl
 import numpy as np
 from pyglm import glm  # Import PyGLM
 from src.hex_grid.hex_grid_class import HexGrid
+
 
 # Initialize Pygame
 pygame.init()
@@ -11,15 +14,16 @@ pygame.display.set_mode((screen_width, screen_height), pygame.OPENGL | pygame.DO
 ctx = moderngl.create_context()
 
 hex_grid2 = HexGrid(16, 9, (0.0, 0.0, 0.0))
-
-# Get RAW coordinates from your HexGrid (no scaling/scrolling on CPU)
-# Assume your HexGrid returns coordinates that represent its actual 3D position (x, y, z=0 for now)
-# You might need to adjust your HexGrid to produce reasonable initial world coordinates
-# For demonstration, let's pretend your lines_cords are already 'world' coordinates
-# For a 2D grid, initially set Z to 0.0 or a small constant like -1.0.
-# If your get_lines_cords produces (N, 4, 2), you'll want (N, 4, 3) for Z.
-# Let's add a Z component to the raw data, assuming it's flat on Z=0
-# Adjust this based on how your HexGrid actually generates initial coords.
+"""
+Get RAW coordinates from your HexGrid (no scaling/scrolling on CPU)
+Assume your HexGrid returns coordinates that represent its actual 3D position (x, y, z=0 for now)
+You might need to adjust your HexGrid to produce reasonable initial world coordinates
+For demonstration, let's pretend your lines_cords are already 'world' coordinates
+For a 2D grid, initially set Z to 0.0 or a small constant like -1.0.
+If your get_lines_cords produces (N, 4, 2), you'll want (N, 4, 3) for Z.
+Let's add a Z component to the raw assets, assuming it's flat on Z=0
+Adjust this based on how your HexGrid actually generates initial coords.
+"""
 raw_coords_2d = hex_grid2.lines_cords.flatten().astype(np.float32)
 
 # Convert 2D (x,y) to 3D (x,y,z) for OpenGL (z=0.0)
@@ -36,36 +40,16 @@ coords_3d[:, 2] = 0.0 # All on the Z=0 plane initially
 # Flatten again for VBO
 final_vbo_data = coords_3d.flatten()
 
+current_script_path = os.path.abspath(__file__)
+root_directory = os.path.join(current_script_path, "..", "..", "..")
 
-vertex_shader = '''
-#version 330 core
+with open(os.path.join(root_directory, 'assets', 'shaders', 'mvp.vert'), 'r') as file:
+    vertex_shader = file.read()
 
-in vec3 in_position; // Now a vec3 for x, y, z
+with open(os.path.join(root_directory, 'assets', 'shaders', 'white.frag'), 'r') as file:
+    fragment_shader = file.read()
 
-// Uniforms for matrices (passed from Python)
-uniform mat4 u_model;      // Model matrix (transforms local to world space)
-uniform mat4 u_view;       // View matrix (transforms world to camera space)
-uniform mat4 u_projection; // Projection matrix (transforms camera to clip space)
-
-void main() {
-    // Multiply by matrices in order: Model -> View -> Projection
-    // This pipeline transforms the vertex from local space to clip space
-    gl_Position = u_projection * u_view * u_model * vec4(in_position, 1.0);
-}
-'''
-
-fragment_shader = '''
-#version 330 core
-out vec4 FragColor;
-void main() {
-    FragColor = vec4(1.0, 1.0, 1.0, 1.0); // Blue color
-}
-'''
-
-prog = ctx.program(
-    vertex_shader=vertex_shader,
-    fragment_shader=fragment_shader
-)
+prog = ctx.program(vertex_shader, fragment_shader)
 
 vbo = ctx.buffer(final_vbo_data)
 # Note: '3f' because in_position is now a vec3
@@ -95,6 +79,7 @@ projection_matrix = glm.perspective(glm.radians(fovy_deg), aspect_ratio, near_pl
 # --- Set up Model Matrix (for your hex grid) ---
 # Start with identity matrix (no translation, rotation, scale)
 model_matrix = glm.mat4(1.0)
+print(model_matrix)
 # You can then translate, rotate, or scale your grid
 # model_matrix = glm.translate(model_matrix, glm.vec3(0.0, 0.0, 0.0))
 # model_matrix = glm.rotate(model_matrix, glm.radians(45.0), glm.vec3(0.0, 1.0, 0.0)) # Rotate around Y axis
@@ -106,9 +91,10 @@ model_matrix = glm.mat4(1.0)
 # Scale them down so they fit well in the camera's view.
 # A simple way to scale:
 model_scale = 0.1 # Adjust this based on your HexGrid's coordinate range
-model_matrix = glm.scale(model_matrix, glm.vec3(model_scale, model_scale, model_scale))
+model_matrix = glm.scale(model_matrix, glm.vec3(model_scale, -model_scale, model_scale))
 # And translate to center it
-model_matrix = glm.translate(model_matrix, glm.vec3(-8.0, -4.5, 0.0)) # Center 16x9 grid
+model_matrix = glm.translate(model_matrix, glm.vec3(-8.0, -9.0, 0.0)) # Center 16x9 grid
+print(model_matrix)
 
 
 running = True

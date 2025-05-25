@@ -1,5 +1,7 @@
 import pygame
 import moderngl
+print("ModernGL version currently running:", moderngl.__version__)
+
 import numpy as np
 
 from src.hex_grid.hex_grid_class import HexGrid
@@ -47,8 +49,17 @@ while running:
     array_copy = hex_grid2.lines_cords.flatten().astype(np.float32)
     vbo = ctx.buffer(array_copy)
     vao = ctx.vertex_array(prog, [(vbo, '2f', 'in_cord')])
-    for i in range(155):
-        vao.render(moderngl.LINE_STRIP, vertices=4, first=i*4)
+    # for i in range(155):
+    #     vao.render(moderngl.LINE_STRIP, vertices=4, first=i*4)
+
+    vertex_counts = np.ones(16*9)*4
+    first_offsets = np.arange(0, 16*9, 4)
+    vao.multi_draw(
+        mode=moderngl.LINE_STRIP,  # Or moderngl.TRIANGLES, etc.
+        first=first_offsets,  # A list of start indices
+        counts=vertex_counts,  # A list of vertex counts for each draw
+        # For indexed drawing (multi_draw_indexed), you'd also provide 'indices' offsets
+    )
 
     pygame.display.flip()
 
