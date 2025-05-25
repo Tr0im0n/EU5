@@ -5,6 +5,7 @@ import numpy as np
 from src.hex_grid.hex_grid_class import HexGrid
 from utils.import_asset import import_shader, import_texture
 
+
 # Initialize Pygame
 pygame.init()
 pygame.display.set_mode((1600, 900), pygame.OPENGL | pygame.DOUBLEBUF)
@@ -22,15 +23,11 @@ void main() {
 # -0.05*new_cord.y+0.8
 
 # Create shader program
-prog = ctx.program(
-    vertex_shader=vertex_shader,
-    fragment_shader=import_shader('white.frag')
-)
+prog = ctx.program(vertex_shader=vertex_shader,
+    fragment_shader=import_shader('white.frag'))
 
-prog2 = ctx.program(
-    vertex_shader=import_shader("hex_grid.vert"),
-    fragment_shader=import_shader('hex_grid.frag')
-)
+prog2 = ctx.program(vertex_shader=import_shader("hex_grid.vert"),
+    fragment_shader=import_shader('texture.frag'))
 
 hex_grid2 = HexGrid(16, 9, (0.0, 0.0, 0.0))
 
@@ -43,9 +40,9 @@ my_texture = ctx.texture(image.size, 4, image.tobytes())
 
 # 3. (Optional but Recommended) Configure Texture Properties
 # Filtering: How pixels are sampled when the texture is scaled up/down
-my_texture.filter = (moderngl.LINEAR_MIPMAP_LINEAR, moderngl.LINEAR)
+# my_texture.filter = (moderngl.LINEAR_MIPMAP_LINEAR, moderngl.LINEAR)
 # Generate mipmaps for better quality at different distances
-my_texture.build_mipmaps()
+# my_texture.build_mipmaps()
 # Wrapping: How UV coordinates outside the 0.0-1.0 range behave
 # my_texture.wrap_x = moderngl.REPEAT # Repeats the texture horizontally
 # my_texture.wrap_y = moderngl.REPEAT # Repeats the texture vertically
@@ -75,8 +72,8 @@ uv_data = np.array([
 ], dtype='f4')
 
 uv_data2 = np.array([
-    193/593, 259/543,   # 259/543, 284/543
-    116/593, 259/543,
+    193/593, 258/543,   # 259/543, 284/543
+    116/593, 258/543,
     77/593, 191/543,
     116/593, 122/543,   # 121/543, 422/543
     193/593, 122/543,
@@ -106,6 +103,8 @@ while running:
 # Cleanup
 for i in [vao, instance_vbo, base_vbo, uv_vbo, vert_vbo, tile_vao, prog, prog2]:
     i.release()
+
+
 pygame.quit()
 
 
