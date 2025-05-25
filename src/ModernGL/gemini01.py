@@ -3,9 +3,10 @@ import os
 import pygame
 import moderngl
 import numpy as np
-from pyglm import glm  # Import PyGLM
-from src.hex_grid.hex_grid_class import HexGrid
+from pyglm import glm
 
+from src.hex_grid.hex_grid_class import HexGrid
+from utils.import_asset import import_shader
 
 # Initialize Pygame
 pygame.init()
@@ -43,11 +44,8 @@ final_vbo_data = coords_3d.flatten()
 current_script_path = os.path.abspath(__file__)
 root_directory = os.path.join(current_script_path, "..", "..", "..")
 
-with open(os.path.join(root_directory, 'assets', 'shaders', 'mvp.vert'), 'r') as file:
-    vertex_shader = file.read()
-
-with open(os.path.join(root_directory, 'assets', 'shaders', 'white.frag'), 'r') as file:
-    fragment_shader = file.read()
+vertex_shader = import_shader('mvp.vert')
+fragment_shader = import_shader('white.frag')
 
 prog = ctx.program(vertex_shader, fragment_shader)
 

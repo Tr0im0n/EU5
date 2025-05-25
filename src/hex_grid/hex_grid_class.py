@@ -3,10 +3,14 @@ import pygame
 
 
 class HexGrid:
-    def __init__(self, width: int, height: int, color):
+    def __init__(self, width: int, height: int, color=None):
         self.width = width
         self.height = height
-        self.color = color
+        self.color = color if color is not None else (1., 1., 1.)
+
+        # self.corner_offsets = np.array([-1., 1., -1., -1., 0., -2., 1., -1., 1., 1., 0., 2.], dtype=np.float32)
+        # self.corner_offsets = np.array([0, 2, -1, 1, -1, -1, 0, -2, 1, -1, 1, 1], dtype=np.float32)
+        self.corner_offsets = np.array([0, -2, -1, -1, -1, 1, 0, 2, 1, 1, 1, -1], dtype=np.float32)
         self.center_cords = None
         self.lines_cords = None
 
