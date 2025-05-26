@@ -44,7 +44,7 @@ final_vbo_data = coords_3d.flatten()
 current_script_path = os.path.abspath(__file__)
 root_directory = os.path.join(current_script_path, "..", "..", "..")
 
-vertex_shader = import_shader('mvp.vert')
+vertex_shader = import_shader('mvp_color.vert')
 fragment_shader = import_shader('white.frag')
 
 prog = ctx.program(vertex_shader, fragment_shader)
