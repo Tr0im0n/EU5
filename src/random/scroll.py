@@ -1,7 +1,7 @@
 
 
 class Scroll:
-    def __init__(self, x_lb=-2000.0, x_ub=2000.0, y_lb=-2000.0, y_ub=2000.0, z_lb=-4.0, z_ub=4.0):
+    def __init__(self, x_lb=-2000.0, x_ub=20000.0, y_lb=-2000.0, y_ub=20000.0, z_lb=-4.0, z_ub=4.0):
         self._x = 0.0
         self._y = 0.0
         self._z = 0.0

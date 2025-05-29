@@ -3,13 +3,14 @@ import numpy as np
 import pygame
 from pyglm import glm
 
-from src.game_loops.scroll import Scroll
+from src.hex_grid.hex_map import HexMap
+from src.random.scroll import Scroll
 from src.hex_grid.hex_grid_class import HexGrid
 from utils.import_asset import import_csv, import_shader
 
 pygame.init()
 WIDTH, HEIGHT = 1600, 900
-FPS = 60
+FPS_CAP = 600
 clock = pygame.time.Clock()
 font = pygame.font.SysFont("arial", 20)
 running = True
@@ -22,19 +23,25 @@ last_pos_for_scroll = None
 scroll = Scroll()
 
 # ModernGL vbo, prog, vao
-hex_grid2 = HexGrid(20, 20, (1., 1., 1.))
-center_cords = hex_grid2.center_cords
-center_cords_vbo = ctx.buffer(center_cords.flatten().astype(np.float32))
-line_offsets_vbo = ctx.buffer(hex_grid2.corner_offsets[2:10])
-tile_offsets_vbo = ctx.buffer(hex_grid2.corner_offsets)
-hex_colors = import_csv("korea_manchuria_hires.csv")
-hex_colors_vbo = ctx.buffer(hex_colors)
+# hex_grid2 = HexGrid(20, 20, (1., 1., 1.))
+hex_map_1 = HexMap(20, 20)
+center_cords = hex_map_1.center_cords.astype(np.float32)
+center_cords.shape = (400, 2)
+corner_offsets_vbo = ctx.buffer(hex_map_1.corner_offsets.tobytes())
+# hex_colors = import_csv("korea_manchuria_hires.csv")
+distance_shades = np.maximum(0, 1 - (hex_map_1.distances / 300))
+hex_colors = np.zeros((20, 20, 3), dtype=np.float32)
+hex_colors[..., 1] = distance_shades
+hex_colors[0, 0, 1] = 0.1
+hex_colors[19, 19, 1] = 0.1
+hex_colors.shape = (400, 3)
 
-tile_prog = ctx.program(import_shader("tiles_color.vert"), import_shader("color.frag"))
-grid_prog = ctx.program(import_shader("grid.vert"), import_shader("white.frag"))
+center_cords_color = np.hstack((center_cords, hex_colors), dtype=np.float32)
+center_cords_color_vbo = ctx.buffer(center_cords_color.tobytes())
+
+prog = ctx.program(import_shader("universal.vert"), import_shader("universal.frag"))
 
 # universal
-
 camera_pos = glm.vec3(0.0, -5.0, 5.0)  # Camera at (0,0,15)
 look_at = glm.vec3(0.0, 0.0, 0.0)  # Looking at the origin
 up_vector = glm.vec3(0.0, 1.0, 0.0)  # Y-axis is up
@@ -49,28 +56,28 @@ projection_matrix = glm.perspective(glm.radians(fovy_deg), aspect_ratio, near_pl
 model_matrix = glm.mat4(1.0)
 model_matrix = glm.scale(model_matrix, glm.vec3(0.4, -0.3, 0.8))
 
-for prog in [tile_prog, grid_prog]:
-    prog['u_model'].write(model_matrix.to_bytes())
-    prog['u_view'].write(view_matrix.to_bytes())
-    prog['u_projection'].write(projection_matrix.to_bytes())
+prog['u_color'].value = np.array((0, 0, 0, 1), dtype=np.float32)
+prog['u_use_u_color'].value = False
+prog['u_use_texture'].value = False
+prog['u_use_mvp'].value = True
+mvp_matrix = projection_matrix * view_matrix * model_matrix
+prog['u_mvp_matrix'].write(mvp_matrix.to_bytes())
 
+tile_vao = ctx.vertex_array(prog, [(corner_offsets_vbo, '2f', 'in_position'),
+                                   (center_cords_color_vbo, '2f 3f /i', 'in_instance_position', 'in_color')])
 
-tile_vao = ctx.vertex_array(tile_prog, [(tile_offsets_vbo, '2f', 'in_position'),
-                                        (hex_colors_vbo, '3f/i', 'in_color'),
-                                        (center_cords_vbo, '2f/i', 'in_instance_position')])
-
-grid_vao = ctx.vertex_array(grid_prog, [(line_offsets_vbo, '2f', 'in_position'),
-                                        (center_cords_vbo, '2f/i', 'in_instance_position')])
+grid_vao = ctx.vertex_array(prog, [(corner_offsets_vbo, '2f', 'in_position'),
+                                   (center_cords_color_vbo, '2f 3x4 /i', 'in_instance_position')])
 
 fps_prog = ctx.program(import_shader("pos_uv.vert"), import_shader("texture.frag"))
-quad_vertices = np.array([  # position (x, y), texture_coord (u, v)
-    -1.0, -1.0, 0.0, 1.0,  # Bottom-left
-    -1.0, -0.9, 0.0, 0.0,  # Top-left
-    -0.8, -1.0, 1.0, 1.0,  # Bottom-right
-    -0.8, -0.9, 1.0, 0.0  # Top-right
+quad_vertices = np.array([  # position (x, y), texture_coord (u, v), x-1 for some reason??? in_instance_position
+    -2.0, -1.0, 0.0, 1.0,  # Bottom-left
+    -2.0, -0.9, 0.0, 0.0,  # Top-left
+    -1.8, -1.0, 1.0, 1.0,  # Bottom-right
+    -1.8, -0.9, 1.0, 0.0  # Top-right
 ], dtype='f4')
 fps_vbo = ctx.buffer(quad_vertices.tobytes())
-fps_vao = ctx.vertex_array(fps_prog, [(fps_vbo, '2f 2f', 'in_position', 'in_uv')])
+fps_vao = ctx.vertex_array(prog, [(fps_vbo, '2f 2f', 'in_position', 'in_texcoord')])
 
 
 while running:
@@ -98,11 +105,13 @@ while running:
     scrolled_camera_pos = camera_pos + glm.vec3(scroll.x/200, -scroll.y/200, -scroll.z)
     scrolled_look_at = look_at + glm.vec3(scroll.x/200, -scroll.y/200, 0)
     view_matrix = glm.lookAt(scrolled_camera_pos, scrolled_look_at, up_vector)
-    tile_prog['u_view'].write(view_matrix.to_bytes())
-    grid_prog['u_view'].write(view_matrix.to_bytes())
+    mvp_matrix = projection_matrix * view_matrix * model_matrix
+    prog['u_mvp_matrix'].write(mvp_matrix.to_bytes())
 
     tile_vao.render(moderngl.TRIANGLE_FAN, vertices=6, instances=400)
+    prog['u_use_u_color'].value = True
     grid_vao.render(moderngl.LINE_STRIP, vertices=4, instances=400)
+    prog['u_use_u_color'].value = False
 
     fps = int(clock.get_fps())
     text_surface = font.render(f"fps: {fps} ModernGL", True, (255, 255, 255), (0, 0, 0))
@@ -110,17 +119,21 @@ while running:
     text_pixels = pygame.image.tostring(text_surface, 'RGB')
     text_texture = ctx.texture(size=(text_width, text_height), components=3, data=text_pixels)
     text_texture.use(0)
-    fps_prog['u_texture'].value = 0
+    prog['u_texture_sampler'].value = 0
+    prog['u_use_mvp'].value = False
+    prog['u_use_texture'].value = True
     fps_vao.render(moderngl.TRIANGLE_STRIP, vertices=4)
+    prog['u_use_mvp'].value = True
+    prog['u_use_texture'].value = False
 
     pygame.display.flip()
-    clock.tick(FPS)
+    clock.tick(FPS_CAP)
 
 
 pygame.quit()
 
-all_to_be_released = [center_cords_vbo, line_offsets_vbo, tile_offsets_vbo, hex_colors_vbo, fps_vbo,
-                      tile_prog, grid_prog, grid_vao, tile_vao]
+all_to_be_released = [center_cords_color_vbo, corner_offsets_vbo, fps_vbo,
+                      prog, grid_vao, tile_vao]
 
 for i in all_to_be_released:
     i.release()

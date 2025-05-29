@@ -1,5 +1,9 @@
+import random
+
 import numpy as np
 import pygame
+
+from src.random.dijkstra import dijkstra_2
 
 
 class HexMap:
@@ -10,8 +14,20 @@ class HexMap:
         self.col_n = np.arange(self.width, dtype=np.int16)
         self.row_n = np.arange(self.height, dtype=np.int16).reshape(self.height, 1)
 
+        self.corner_offsets = np.array([0, -2, -1, -1, -1, 1, 0, 2, 1, 1, 1, -1], dtype=np.float32)
+
         self.grid_cords = None
         self.center_cords = None
+        self.adjacent_nodes = None
+        self.travel_cost = None
+        self.distances = None
+
+        self.get_center_cords()
+        self.get_adjacent_nodes_comprehension()
+        self.make_random_tiles()
+        self.get_distances()
+        print(self.distances.shape)
+
 
     def get_grid_cords(self):
         x = np.broadcast_to(self.col_n, shape=(self.height, self.width))
@@ -19,13 +35,43 @@ class HexMap:
         self.grid_cords = np.stack(arrays=(x, y), axis=2)
 
     def get_center_cords(self):
-        x = 1 + self.row_n * 2 + self.col_n % 2
-        y = 2 + 3 * self.col_n
+        x = 1 + self.col_n * 2 + self.row_n % 2
+        y = 2 + 3 * self.row_n
         y = np.broadcast_to(y, shape=(self.height, self.width))
         self.center_cords = np.stack(arrays=(x, y), axis=2)
 
-    def make_ocean(self):
-        return np.zeros((self.height, self.height), dtype=np.int8) - 2
+    def make_random_tiles(self):
+        random.seed(25)
+        self.travel_cost = np.random.randint(10, 41, size=(self.height, self.width))
+
+    def get_adjacent_nodes(self):
+        ans = {}
+        for y in self.row_n[1:-1]:
+            for x in self.col_n[1:-1]:
+                x_offset = x+y%2
+                ans[(y, x)] = {
+                    (y, x-1), (y, x+1),
+                    (y-1, x_offset-1), (y-1, x_offset),
+                    (y+1, x_offset-1), (y+1, x_offset)}
+        self.adjacent_nodes = ans
+
+    def get_adjacent_nodes_comprehension(self):
+        self.adjacent_nodes = {(y, x): {
+                (y, x - 1),  # Direct left
+                (y, x + 1),  # Direct right
+                (y - 1, x + (y % 2) - 1), # Upper-left relative to x_offset
+                (y - 1, x + (y % 2)),     # Upper-right relative to x_offset
+                (y + 1, x + (y % 2) - 1), # Lower-left relative to x_offset
+                (y + 1, x + (y % 2))}     # Lower-right relative to x_offset
+            for y in range(1, self.height-1)
+            for x in range(1, self.width-1)}
+
+    def get_distances(self):
+        starting_node = (10, 10)
+        distances = dijkstra_2(self.adjacent_nodes, starting_node, self.travel_cost)
+        self.distances = np.zeros((self.height, self.width), dtype=np.float32)
+        for i, j in distances.items():
+            self.distances[*i] = j
 
     @staticmethod
     def make_color_array(array):
@@ -35,13 +81,18 @@ class HexMap:
 
         return ans
 
-    def make_random_tiles(self):
+    def make_ocean(self):
+        return np.zeros((self.height, self.height), dtype=np.int8) - 2
 
-
-
-
-
-
+    @staticmethod
+    def get_single_adjacent(y, x):
+        x_offset = x+y%2
+        return {(y, x-1): 1,
+               (y, x+1): 1,
+               (y-1, x_offset-1): 1,
+               (y-1, x_offset): 1,
+               (y+1, x_offset-1): 1,
+               (y+1, x_offset): 1}
 
 
 
