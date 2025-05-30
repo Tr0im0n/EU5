@@ -3,7 +3,7 @@ import random
 import numpy as np
 import pygame
 
-from src.random.dijkstra import dijkstra_2
+from src.random.dijkstra import dijkstra_2, dijkstra_3
 
 
 class HexMap:
@@ -56,19 +56,32 @@ class HexMap:
         self.adjacent_nodes = ans
 
     def get_adjacent_nodes_comprehension(self):
-        self.adjacent_nodes = {(y, x): {
+        self.adjacent_nodes = {(y, x): [
                 (y, x - 1),  # Direct left
                 (y, x + 1),  # Direct right
                 (y - 1, x + (y % 2) - 1), # Upper-left relative to x_offset
                 (y - 1, x + (y % 2)),     # Upper-right relative to x_offset
                 (y + 1, x + (y % 2) - 1), # Lower-left relative to x_offset
-                (y + 1, x + (y % 2))}     # Lower-right relative to x_offset
+                (y + 1, x + (y % 2))]     # Lower-right relative to x_offset
             for y in range(1, self.height-1)
             for x in range(1, self.width-1)}
 
+    def get_adjacent_nodes_array(self):
+        y = self.row_n
+        x = self.col_n
+        ans = [
+            y, x - 1,  # Direct left 01
+            x + 1,  # Direct right y, 02
+            y - 1, x + y % 2 - 1,  # Upper-left relative to x_offset 34
+            x + y % 2,  # Upper-right relative to x_offset y - 1, 35
+            y + 1  # Lower-left relative to x_offset , x + y % 2 - 1, 64
+            ]  # Lower-right relative to x_offset y + 1, x + y % 2 65
+        indices = (0, 1, 0, 2, 3, 4, 3, 5, 6, 4, 6, 5)
+        self.adjacent_nodes = np.stack(ans[indices], axis=2)
+
     def get_distances(self):
         starting_node = (10, 10)
-        distances = dijkstra_2(self.adjacent_nodes, starting_node, self.travel_cost)
+        distances = dijkstra_3(self.adjacent_nodes, starting_node, self.travel_cost)
         self.distances = np.zeros((self.height, self.width), dtype=np.float32)
         for i, j in distances.items():
             self.distances[*i] = j
