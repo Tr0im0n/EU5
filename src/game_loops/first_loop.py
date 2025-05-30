@@ -30,7 +30,7 @@ center_cords.shape = (400, 2)
 corner_offsets_vbo = ctx.buffer(hex_map_1.corner_offsets.tobytes())
 # hex_colors = import_csv("korea_manchuria_hires.csv")
 distance_shades = np.maximum(0, 1 - (hex_map_1.distances / 300))
-quit()
+
 hex_colors = np.zeros((20, 20, 3), dtype=np.float32)
 hex_colors[..., 1] = distance_shades
 hex_colors[0, 0, 1] = 0.1

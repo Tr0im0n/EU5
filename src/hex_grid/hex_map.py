@@ -81,7 +81,7 @@ class HexMap:
 
     def get_distances(self):
         starting_node = (10, 10)
-        distances = dijkstra_3(self.adjacent_nodes, starting_node, self.travel_cost)
+        distances = dijkstra_2(self.adjacent_nodes, starting_node, self.travel_cost)
         self.distances = np.zeros((self.height, self.width), dtype=np.float32)
         for i, j in distances.items():
             self.distances[*i] = j
