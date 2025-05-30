@@ -3,7 +3,7 @@ import random
 import numpy as np
 import pygame
 
-from src.random.dijkstra import dijkstra_2, dijkstra_3
+from src.random.dijkstra import dijkstra_2, dijkstra_3, dijkstra_multi
 
 
 class HexMap:
@@ -23,10 +23,9 @@ class HexMap:
         self.distances = None
 
         self.get_center_cords()
-        self.get_adjacent_nodes_comprehension()
+        self.get_adjacent_nodes_array()
         self.make_random_tiles()
         self.get_distances()
-        print(self.distances.shape)
 
 
     def get_grid_cords(self):
@@ -42,7 +41,41 @@ class HexMap:
 
     def make_random_tiles(self):
         random.seed(25)
-        self.travel_cost = np.random.randint(10, 41, size=(self.height, self.width))
+        self.travel_cost = np.random.randint(10, 41, size=(self.height, self.width), dtype=np.uint8)
+
+    def get_adjacent_nodes_array(self):
+        y = self.row_n
+        x = self.col_n
+        arrays = [y, x - 1, x + 1, y - 1, x + y % 2 - 1, x + y % 2, y + 1]
+        broadcasted_arrays = [np.broadcast_to(array, (self.height, self.width)) for array in arrays]
+        indices = (0, 1, 0, 2, 3, 4, 3, 5, 6, 4, 6, 5)
+        self.adjacent_nodes = np.stack([broadcasted_arrays[i] for i in indices], axis=2)
+        self.adjacent_nodes.shape = (self.height, self.width, 6, 2)
+
+    def get_distances(self):
+        starting_nodes = ((6, 6), (6, 13), (13, 10))
+        self.distances = dijkstra_multi(self.adjacent_nodes, starting_nodes, self.travel_cost)
+
+    @staticmethod
+    def make_color_array(array):
+        ans = np.zeros((array.shap[0], 3), dtype=np.float32)
+        for i, key in enumerate(array):
+            ans[i] = color_map_normalized[key]
+
+        return ans
+
+    def make_ocean(self):
+        return np.zeros((self.height, self.height), dtype=np.int8) - 2
+
+    @staticmethod
+    def get_single_adjacent(y, x):
+        x_offset = x+y%2
+        return {(y, x-1): 1,
+               (y, x+1): 1,
+               (y-1, x_offset-1): 1,
+               (y-1, x_offset): 1,
+               (y+1, x_offset-1): 1,
+               (y+1, x_offset): 1}
 
     def get_adjacent_nodes(self):
         ans = {}
@@ -66,50 +99,13 @@ class HexMap:
             for y in range(1, self.height-1)
             for x in range(1, self.width-1)}
 
-    def get_adjacent_nodes_array(self):
-        y = self.row_n
-        x = self.col_n
-        ans = [
-            y, x - 1,  # Direct left 01
-            x + 1,  # Direct right y, 02
-            y - 1, x + y % 2 - 1,  # Upper-left relative to x_offset 34
-            x + y % 2,  # Upper-right relative to x_offset y - 1, 35
-            y + 1  # Lower-left relative to x_offset , x + y % 2 - 1, 64
-            ]  # Lower-right relative to x_offset y + 1, x + y % 2 65
-        indices = (0, 1, 0, 2, 3, 4, 3, 5, 6, 4, 6, 5)
-        self.adjacent_nodes = np.stack(ans[indices], axis=2)
-
-    def get_distances(self):
-        starting_node = (10, 10)
-        distances = dijkstra_2(self.adjacent_nodes, starting_node, self.travel_cost)
-        self.distances = np.zeros((self.height, self.width), dtype=np.float32)
-        for i, j in distances.items():
-            self.distances[*i] = j
-
-    @staticmethod
-    def make_color_array(array):
-        ans = np.zeros((array.shap[0], 3), dtype=np.float32)
-        for i, key in enumerate(array):
-            ans[i] = color_map_normalized[key]
-
-        return ans
-
-    def make_ocean(self):
-        return np.zeros((self.height, self.height), dtype=np.int8) - 2
-
-    @staticmethod
-    def get_single_adjacent(y, x):
-        x_offset = x+y%2
-        return {(y, x-1): 1,
-               (y, x+1): 1,
-               (y-1, x_offset-1): 1,
-               (y-1, x_offset): 1,
-               (y+1, x_offset-1): 1,
-               (y+1, x_offset): 1}
-
-
-
-
+    def get_distances_old(self):
+        # starting_node = (10, 10)
+        # distances = dijkstra_2(self.adjacent_nodes, starting_node, self.travel_cost)
+        # self.distances = np.zeros((self.height, self.width), dtype=np.float32)
+        # for i, j in distances.items():
+        #     self.distances[*i] = j
+        return 1
 
 
 
@@ -125,6 +121,16 @@ color_map_normalized = {
 
 
 """
+
+
+ans = [
+    y, x - 1,  # Direct left 01
+    x + 1,  # Direct right y, 02
+    y - 1, x + y % 2 - 1,  # Upper-left relative to x_offset 34
+    x + y % 2,  # Upper-right relative to x_offset y - 1, 35
+    y + 1  # Lower-left relative to x_offset , x + y % 2 - 1, 64
+    ]  # Lower-right relative to x_offset y + 1, x + y % 2 65
+indices = (0, 1, 0, 2, 3, 4, 3, 5, 6, 4, 6, 5)
 
 4 mountains
 3 plateau
