@@ -24,7 +24,7 @@ def why_indents():
 
     # Create shader program
     prog = ctx.program(vertex_shader=vertex_shader,
-        fragment_shader=import_shader('white.frag'))
+        fragment_shader=import_shader('uniform_color.frag'))
 
     prog2 = ctx.program(vertex_shader=import_shader("pos_uv.vert"),
         fragment_shader=import_shader('texture.frag'))

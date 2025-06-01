@@ -91,6 +91,12 @@ def dijkstra_multi(all_nodes, starting_nodes, distance_array):
             continue
         for adjacent_node in all_nodes[*current_node]:
             new_distance = current_distance + distance_array[*adjacent_node]
+            """
+            if (current_node == on_land) and (adjacent_node == on_sea):
+                new distance += current node harbor cost
+            elif (current_node == on_sea) and (adjacent_node == on_land):
+                new distance += adjacent node harbor cost
+            """
             try:
                 if new_distance < distance[*adjacent_node, 0]:
                     distance[*adjacent_node] = new_distance, start_node_index

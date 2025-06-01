@@ -47,7 +47,7 @@ def more_indents():
     root_directory = os.path.join(current_script_path, "..", "..", "..")
 
     vertex_shader = import_shader('mvp_color.vert')
-    fragment_shader = import_shader('white.frag')
+    fragment_shader = import_shader('uniform_color.frag')
 
     prog = ctx.program(vertex_shader, fragment_shader)
 
