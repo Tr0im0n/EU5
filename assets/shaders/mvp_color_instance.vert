@@ -4,7 +4,7 @@ in vec2 in_position;
 in vec2 in_instance_position;
 in vec3 in_color;
 
-out vec3 v_color;
+flat out vec3 v_color;
 
 uniform mat4 u_mvp_matrix;
 

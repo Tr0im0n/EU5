@@ -26,7 +26,7 @@ def why_indents():
     prog = ctx.program(vertex_shader=vertex_shader,
         fragment_shader=import_shader('uniform_color.frag'))
 
-    prog2 = ctx.program(vertex_shader=import_shader("pos_uv.vert"),
+    prog2 = ctx.program(vertex_shader=import_shader("pos_texcoord.vert"),
         fragment_shader=import_shader('texture.frag'))
 
     hex_grid2 = HexGrid(16, 9, (0.0, 0.0, 0.0))

@@ -76,7 +76,7 @@ tile_vao = ctx.vertex_array(prog, [(corner_offsets_vbo, '2f', 'in_position'),
 grid_vao = ctx.vertex_array(prog, [(corner_offsets_vbo, '2f', 'in_position'),
                                    (center_cords_color_vbo, '2f 3x4 /i', 'in_instance_position')])
 
-fps_prog = ctx.program(import_shader("pos_uv.vert"), import_shader("texture.frag"))
+fps_prog = ctx.program(import_shader("pos_texcoord.vert"), import_shader("texture.frag"))
 quad_vertices = np.array([  # position (x, y), texture_coord (u, v), x-1 for some reason??? in_instance_position
     -2.0, -1.0, 0.0, 1.0,  # Bottom-left
     -2.0, -0.9, 0.0, 0.0,  # Top-left
