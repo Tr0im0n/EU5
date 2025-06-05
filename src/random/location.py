@@ -27,7 +27,7 @@
 # proximity, control, satisfaction, market access, literacy
 # rgo level, road, harbor, other buildings
 # estate stuff
-
+# tax base
 # distance cost? proximity
 
 # all goods to market

@@ -1,6 +1,10 @@
-
 import numpy as np
 import matplotlib.pyplot as plt
+
+"""
+Written by: GEMINI
+"""
+
 
 def simplex_noise_2d(x, y, seed=0):
     """
