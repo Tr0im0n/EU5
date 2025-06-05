@@ -15,10 +15,13 @@ def import_shader(file_name):
     return ans
 
 
-def import_texture(file_name):
+def import_texture(file_name, color_scale="RGBA"):
 
     current_script_path = os.path.abspath(__file__)
     root_directory = os.path.join(current_script_path, "..", "..")
+
+    if color_scale == "GRAY":
+        return Image.open(os.path.join(root_directory, 'assets', 'textures', file_name))
 
     return Image.open(os.path.join(root_directory, 'assets', 'textures', file_name)).convert('RGBA')
 
@@ -36,6 +39,17 @@ def import_csv(file_name):
         ans[i] = TileColors.get_color(tile_type_str)[:3]
 
     return ans
+
+
+
+
+
+
+
+
+
+
+
 
 
 class TileColors:

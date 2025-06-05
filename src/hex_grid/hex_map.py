@@ -22,6 +22,8 @@ class HexMap:
         self.travel_cost = None
         self.distances = None
 
+        self.get_grid_cords()
+        # print(self.grid_cords[:5, :5, :])
         self.get_center_cords()
         self.get_adjacent_nodes_array()
         self.make_random_tiles()
@@ -34,8 +36,8 @@ class HexMap:
         self.grid_cords = np.stack(arrays=(x, y), axis=2)
 
     def get_center_cords(self):
-        x = 1 + self.col_n * 2 + self.row_n % 2
-        y = 2 + 3 * self.row_n
+        x = self.col_n * 2 + self.row_n % 2 # 1 +
+        y = 3 * self.row_n # 2 +
         y = np.broadcast_to(y, shape=(self.height, self.width))
         self.center_cords = np.stack(arrays=(x, y), axis=2)
 

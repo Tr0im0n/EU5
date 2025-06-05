@@ -1,5 +1,6 @@
 
 import numpy as np
+from PIL import Image
 from matplotlib import pyplot as plt
 
 
@@ -91,10 +92,14 @@ def diamond_square(size_exponent=7, roughness=0.7, seed=2, normalize=True):
     return heightmap
 
 
-def show_diamond_square(seed=2):
+def show_diamond_square(seed=2, save_img=False):
     print("start calc")
     heightmap = diamond_square(seed=seed)
     print("finish calc")
+    if save_img:
+        uint8_heightmap = (heightmap*255).astype(np.uint8)
+        img_grayscale = Image.fromarray(uint8_heightmap, mode='L')
+        img_grayscale.save(f"seed_{seed:02}.png")
     title = f"Generated Terrain from seed = {seed}"
     # plt.pcolormesh(heightmap)
     plt.figure(figsize=(10, 10))
@@ -126,7 +131,7 @@ def test_norm():
 if __name__ == "__main__":
     # test_norm()
     # pink_noise(6, 3, 3)
-    show_diamond_square(8)
+    show_diamond_square(5, False)
 
 
 
