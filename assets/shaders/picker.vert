@@ -15,5 +15,5 @@ void main() {
     instance_position.y = 3*in_instance_id.y;
     gl_Position = u_mvp_matrix * vec4(in_position+instance_position, 0, 1.0);
 
-    v_color = vec3(1, in_instance_id);
+    v_color = vec3(1, in_instance_id)/255;
 }

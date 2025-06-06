@@ -128,8 +128,9 @@ while running:
                     components=4,
                     dtype='f1'  # Read as unsigned bytes (uint8)
                 )
+
                 picked_color_bytes = np.frombuffer(pixel, dtype=np.uint8)
-                print(picked_color_bytes)
+                print(pixel, picked_color_bytes)
             if event.button == 3:  # Right mouse button
                 last_pos_for_scroll = event.pos
         elif event.type == pygame.MOUSEBUTTONUP:
