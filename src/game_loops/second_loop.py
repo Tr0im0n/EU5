@@ -25,17 +25,22 @@ running = True
 last_pos_for_scroll = None
 scroll = Scroll()
 mvp = MVP(scroll)
-# Shader Programs
-flat_color_prog = ctx.program(import_shader("mvp_color_instance.vert"), import_shader("color.frag"))
-ui_prog = ctx.program(import_shader("pos_texcoord.vert"), import_shader("texture.frag"))
-flat_color_prog['u_mvp_matrix'].write(mvp.update().to_bytes())
-new_id_prog = ctx.program(import_shader("tile_type.vert"), import_shader("color.frag"))
 
 ###############################################################################################################
 #   # Making VAO 's
 ###############################################################################################################
-width = 37
-height = 42
+# Shader Programs
+new_id_prog = ctx.program(import_shader("tile_type.vert"), import_shader("color.frag"))
+hex_grid_prog = ctx.program(import_shader("instance_mvp.vert"), import_shader("uniform_color.frag"))
+hex_grid_prog['u_color'] = np.zeros(4, dtype=np.float32)
+ui_prog = ctx.program(import_shader("pos_texcoord.vert"), import_shader("texture.frag"))
+# mvp ubo
+mvp_ubo = ctx.buffer(mvp.update().to_bytes(), dynamic=True)
+mvp_ubo.bind_to_uniform_block(0)
+
+# hex map info
+width = 18 # 37
+height = 21 # 42
 n_tiles = width* height # 37*42=1_554
 
 hex_map_1 = HexMap(width, height)
@@ -56,30 +61,20 @@ hex_id_vbo = ctx.buffer(grid_cords.tobytes())
 # hex_colors[mask] = (1, 1, 1)
 # hex_colors.shape = (400, 3)
 
-# center_cords_color = np.hstack((center_cords, hex_colors), dtype=np.float32)
-# center_cords_color_vbo = ctx.buffer(center_cords_color.tobytes())
-
-topography_texture = import_texture("topography_05.png", "GRAY")
+topography_texture = import_texture("topography_05_small.png", "GRAY")
 topography_array = np.array(topography_texture, dtype=np.uint32)
 topography_buffer = ctx.buffer(topography_array.tobytes())
 topography_buffer.bind_to_storage_buffer(0)
 topography_colors = get_topography_colors_array()
 new_id_prog['u_topography_colors'].write(topography_colors.tobytes())
-new_id_prog['u_map_width'] = 37
+new_id_prog['u_map_width'] = width
 
-
-line_colors = np.zeros((n_tiles, 3), dtype=np.float32)
-line_colors_vbo = ctx.buffer(line_colors.tobytes())
-
-# tile_vao = ctx.vertex_array(flat_color_prog, [(corner_offsets_vbo, '2f', 'in_position'),
-#                                               (center_cords_color_vbo, '2f 3f /i', 'in_instance_position', 'in_color')])
 
 tile_vao = ctx.vertex_array(new_id_prog, [(corner_offsets_vbo, '2f', 'in_position'),
                                               (hex_id_vbo, '2u /i', 'in_instance_id')])
 
-grid_vao = ctx.vertex_array(flat_color_prog, [(corner_offsets_vbo, '2f', 'in_position'),
-                                              (center_cords_vbo, '2f /i', 'in_instance_position'),
-                                              (line_colors_vbo, '3f /i', 'in_color')])
+hex_grid_vao = ctx.vertex_array(hex_grid_prog, [(corner_offsets_vbo, '2f', 'in_position'),
+                                                (center_cords_vbo, '2f /i', 'in_instance_position')])
 
 fps_prog = ctx.program(import_shader("pos_texcoord.vert"), import_shader("texture.frag"))
 quad_vertices = np.array([  # position (x, y), texture_coord (u, v), x-1 for some reason??? in_instance_position
@@ -92,6 +87,27 @@ fps_vbo = ctx.buffer(quad_vertices.tobytes())
 fps_vao = ctx.vertex_array(ui_prog, [(fps_vbo, '2f 2f', 'in_position', 'in_texcoord')])
 
 ###############################################################################################################
+#   # Picker!
+###############################################################################################################
+
+picking_texture = ctx.texture((SCREEN_WIDTH, SCREEN_HEIGHT), 4, dtype='u1')
+picking_depth_attachment = ctx.depth_texture((SCREEN_WIDTH, SCREEN_HEIGHT)) # Same size as screen
+
+fbo_picking = ctx.framebuffer(
+    color_attachments=[picking_texture],
+    depth_attachment=picking_depth_attachment
+)
+
+picker_prog = ctx.program(import_shader("picker.vert"), import_shader("color.frag"))
+vao_picking = ctx.vertex_array(picker_prog, [(corner_offsets_vbo, '2f', 'in_position'),
+                                              (hex_id_vbo, '2u /i', 'in_instance_id')])
+
+
+# picker_vbo = 0
+# picker_vao = ctx.vertex_array(flat_color_prog, [(fps_vbo, '2f 2f', 'in_position', 'in_texcoord')])
+
+
+###############################################################################################################
 #   # Game Loop
 ###############################################################################################################
 
@@ -100,6 +116,20 @@ while running:
         if event.type == pygame.QUIT:
             running = False
         elif event.type == pygame.MOUSEBUTTONDOWN:
+            if event.button == 1:  # Left mouse button
+                # PICKER
+                mouse_x, mouse_y = event.pos
+                fbo_picking.use()
+                ctx.clear(0.0, 0.0, 0.0, 1.0)  # Clear picking FBO with black (Type=0, X=0, Y=0)
+                # ctx.enable(moderngl.DEPTH_TEST)
+                gl_y = SCREEN_HEIGHT - 1 - mouse_y  # Convert mouse_y to OpenGL's bottom-up coords
+                pixel = fbo_picking.read(
+                    viewport=(mouse_x, gl_y, 1, 1),
+                    components=4,
+                    dtype='f1'  # Read as unsigned bytes (uint8)
+                )
+                picked_color_bytes = np.frombuffer(pixel, dtype=np.uint8)
+                print(picked_color_bytes)
             if event.button == 3:  # Right mouse button
                 last_pos_for_scroll = event.pos
         elif event.type == pygame.MOUSEBUTTONUP:
@@ -115,19 +145,14 @@ while running:
         elif event.type == pygame.MOUSEWHEEL:
             scroll.z += event.y * 0.5  # Scroll up (1) or down (-1), scaled by 0.5
 
+    ctx.screen.use()
     ctx.clear(0.1, 0.1, 0.1)
 
-    new_mvp_matrix = mvp.update().to_bytes()
-    new_id_prog['u_mvp_matrix'].write(new_mvp_matrix)
-    flat_color_prog['u_mvp_matrix'].write(new_mvp_matrix)
-    tile_vao.render(moderngl.TRIANGLE_FAN, vertices=6, instances=n_tiles)
-    grid_vao.render(moderngl.LINE_STRIP, vertices=4, instances=n_tiles)
+    mvp_ubo.write(mvp.update().to_bytes())
 
-    # fps = int(clock.get_fps())
-    # my_text = f"fps: {fps} ModernGL"
-    # texture_data = create_font_texture(my_text, font)
-    # text_texture = ctx.texture(*texture_data)
-    # text_texture.use(0)
+    tile_vao.render(moderngl.TRIANGLE_FAN, vertices=6, instances=n_tiles)
+    hex_grid_vao.render(moderngl.LINE_STRIP, vertices=4, instances=n_tiles)
+    # longer version in bottom comment
     ctx.texture(*create_font_texture(f"fps: {int(clock.get_fps())} ModernGL", font)).use(0)
     fps_vao.render(moderngl.TRIANGLE_STRIP, vertices=4)
 
@@ -137,15 +162,24 @@ while running:
 
 pygame.quit()
 
-all_to_be_released = [center_cords_vbo, corner_offsets_vbo, line_colors_vbo, fps_vbo,
-                      flat_color_prog, ui_prog, grid_vao, tile_vao]
+all_to_be_released = [center_cords_vbo, corner_offsets_vbo, fps_vbo,
+                      hex_grid_prog, ui_prog, hex_grid_vao, tile_vao]
 
 for i in all_to_be_released:
     i.release()
 
 
 
+"""
 
+    fps = int(clock.get_fps())
+    my_text = f"fps: {fps} ModernGL"
+    texture_data = create_font_texture(my_text, font)
+    text_texture = ctx.texture(*texture_data)
+    text_texture.use(0)
+
+
+"""
 
 
 

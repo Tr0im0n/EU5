@@ -25,9 +25,9 @@ class HexMap:
         self.get_grid_cords()
         # print(self.grid_cords[:5, :5, :])
         self.get_center_cords()
-        self.get_adjacent_nodes_array()
-        self.make_random_tiles()
-        self.get_distances()
+        # self.get_adjacent_nodes_array()
+        # self.make_random_tiles()
+        # self.get_distances()
 
 
     def get_grid_cords(self):
