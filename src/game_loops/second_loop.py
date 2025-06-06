@@ -90,7 +90,7 @@ fps_vao = ctx.vertex_array(ui_prog, [(fps_vbo, '2f 2f', 'in_position', 'in_texco
 #   # Picker!
 ###############################################################################################################
 
-picking_texture = ctx.texture((SCREEN_WIDTH, SCREEN_HEIGHT), 4, dtype='u1')
+picking_texture = ctx.texture((SCREEN_WIDTH, SCREEN_HEIGHT), 4, dtype='f1')
 picking_depth_attachment = ctx.depth_texture((SCREEN_WIDTH, SCREEN_HEIGHT)) # Same size as screen
 
 fbo_picking = ctx.framebuffer(
@@ -121,6 +121,7 @@ while running:
                 mouse_x, mouse_y = event.pos
                 fbo_picking.use()
                 ctx.clear(0.0, 0.0, 0.0, 1.0)  # Clear picking FBO with black (Type=0, X=0, Y=0)
+                vao_picking.render(moderngl.TRIANGLE_FAN, vertices=6, instances=n_tiles)
                 # ctx.enable(moderngl.DEPTH_TEST)
                 gl_y = SCREEN_HEIGHT - 1 - mouse_y  # Convert mouse_y to OpenGL's bottom-up coords
                 pixel = fbo_picking.read(
@@ -128,9 +129,8 @@ while running:
                     components=4,
                     dtype='f1'  # Read as unsigned bytes (uint8)
                 )
-
                 picked_color_bytes = np.frombuffer(pixel, dtype=np.uint8)
-                print(pixel, picked_color_bytes)
+                print(picked_color_bytes)
             if event.button == 3:  # Right mouse button
                 last_pos_for_scroll = event.pos
         elif event.type == pygame.MOUSEBUTTONUP:
